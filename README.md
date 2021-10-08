@@ -31,7 +31,7 @@ df = spark.read.format(file_type) \
 df.show(5)\
 #display(df)
 
-### 1. Transformar os campos "Premiere" e "dt_inclusao" de string para datetime.
+#### 1. Transformar os campos
 #### Usado "split" para separar a coluna "Premiere" em Dia, Mês e Ano
 f1 = df.withColumn("Premiere1_Dia", split(col("Premiere"), "-").getItem(0))\
 .withColumn("Premiere2_Mes", split(col("Premiere"), "-").getItem(1))\
@@ -60,13 +60,12 @@ f_111 = df_11.withColumn("Premiere",col("Premiere").cast(DateType())) \
     .withColumn("dt_inclusao",col("dt_inclusao").cast(DateType())) \
     .withColumn("FullPremiere",col("FullPremiere").cast(DateType()))
     
-### 2. Ordenar os dados por ativos e gênero de forma decrescente, 0 = inativo e 1 = ativo, todos com número 1 devem aparecer primeiro.
-
+### 2. Ordenar os dados 
 df2 = df_11.sort(col("Active").desc(),col("Genre").desc())\
 df2.show(2)
 #display(df2)
 
-### 3. Remover linhas duplicadas e trocar o resultado das linhas que tiverem a coluna "Seasons" de "TBA" para "a ser anunciado".
+### 3. Remover linhas duplicadas.
 df3 = df2.dropDuplicates()\
 print("Distinct Seasons: " + str(df3.count()))\
 order = df3.sort(col("Active").desc(),col("Genre").desc())\
@@ -83,16 +82,14 @@ filtro = order1.filter(order1.Seasons == "a ser anunciado")\
 filtro.show(2)\
 #display(filtro)
 
-#### 4. Criar uma coluna nova chamada "Data de Alteração" e dentro dela um timestamp.
-
+#### 4. Criar uma coluna nova chamada "Data de Alteração".
 df4 = order1.withColumn("Data de Alteração", to_timestamp(current_timestamp(),"MM-dd-yyyy hh mm a"))\
       .withColumnRenamed("Data de Alteração","Data_de_Alteração")\
 #df4.show(1,truncate=False)\
 df4.show(2)\
 #display(df4)
 
-#### 5. Trocar os nomes das colunas de inglês para português, exemplo: "Title" para "Título" (com acentuação).
-
+#### 5. Trocar os nomes das colunas de inglês para português.
 oldColumns = df4.schema.names\
 newColumns = ["Título","Gênero","GenreLabels","Pré estreia","Temporadas","SeasonsParsed","Episódios analisados"\
               ,"Comprimento","Comprimento mínimo","Comprimento máximo","Status","Ativo","Mesa","Língua","dt_inclusao"\
@@ -101,16 +98,15 @@ df11 = reduce(lambda df4, colunas: df4.withColumnRenamed(oldColumns[colunas], ne
 df11.show(2)\
 #display(df11)
 
-#### 6. Testar e verificar se existe algum erro de processamento do spark e identificar onde pode ter ocorrido o erro.
+#### 6. Testar e verificar se existe algum erro de processamento do spark.
 
-#### Gera tabela Temporária
+#### Gerada tabela Temporária
 ata = df11.registerTempTable("data")\
 output = spark.sql("SELECT * FROM data")\
 output.show(2)
 #display(output)
 
-#### 7. Criar apenas 1 . csv com as seguintes colunas que foram nomeadas anteriormente "Title, Genre, Seasons, Premiere, Language, Active, Status, dt_inclusao, Data de Alteração" as colunas devem estar em português com header e separadas por ";".
-
+#### 7. Criar  1 . csv .
 ### Métodos para gerar .CSV
 output.write.format("csv").mode("overwrite").option("sep","\t").save("/opt/intellij/spark_datagree/data/my-tsv-file.csv")\
 output.write.format("csv").save("/FileStore/tables/mydata_3.csv").option("sep", ";").option("header", "true")\
